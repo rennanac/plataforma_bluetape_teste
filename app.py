@@ -265,7 +265,7 @@ try:
             """)
 
             gridOptions = gb.build()
-            #gridOptions['getRowStyle'] = change_color
+            gridOptions['getRowStyle'] = change_color
 
             AgGrid(df_resultado, gridOptions=gridOptions, allow_unsafe_jscode=True, fit_columns_on_grid_load=True)
 
