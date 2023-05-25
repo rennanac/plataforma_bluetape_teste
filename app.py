@@ -239,12 +239,35 @@ try:
 
             gb = GridOptionsBuilder.from_dataframe(df_resultado)
 
+            gb.configure_column("DOWNLOAD",
+                                headerName="DOWNLOAD",
+                                cellRenderer=JsCode(
+                                    """
+                                    function(params) {
+                                        if (params.value != ''){
+                                            return '<a href=' + params.value + '> 💾 </a>'
+                                        }else{
+                                            return 'Donwload indisponível.'
+                                        }
+                                    }
+                                    """)
+                                )
 
+            change_color = JsCode("""
+                                  function(params){
+                                    if(params.data.RESULTADO == 'ERRO'){
+
+                                           return {
+                                                'color':'#FF0000'
+                                           }
+                                   }           
+                                   }
+                        """)
 
             gridOptions = gb.build()
-            
+            gridOptions['getRowStyle'] = change_color
 
-            AgGrid(df_resultado, gridOptions=gridOptions, allow_unsafe_jscode=True, fit_columns_on_grid_load=True)
+            AgGrid(df_resultado, gridOptions=gridOptions, allow_unsafe_jscode=True)
 
             st.subheader("Detalhes do Resultado BB Movimentações: ")
             # table
