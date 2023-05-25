@@ -341,10 +341,10 @@ class FuncionalidadesAPP:
                             'url_pre_assinada':'DOWNLOAD'
                         }
                     )
-                    #data['HORA RESULTADO'] = pd.to_datetime(data['HORA RESULTADO'], errors='coerce')
-                    #data['HORA RESULTADO'] = data["HORA RESULTADO"].dt.strftime("%H:%M")
-                    #data['DATA DA SOLICITAÇÃO'] = pd.to_datetime(data['DATA DA SOLICITAÇÃO'], errors='coerce')
-                    #data['DATA DA SOLICITAÇÃO'] = data['DATA DA SOLICITAÇÃO'].dt.strftime("%d/%m/%Y")
+                    data['HORA RESULTADO'] = pd.to_datetime(data['HORA RESULTADO'], errors='coerce')
+                    data['HORA RESULTADO'] = data["HORA RESULTADO"].dt.strftime("%H:%M")
+                    data['DATA DA SOLICITAÇÃO'] = pd.to_datetime(data['DATA DA SOLICITAÇÃO'], errors='coerce')
+                    data['DATA DA SOLICITAÇÃO'] = data['DATA DA SOLICITAÇÃO'].dt.strftime("%d/%m/%Y")
 
         except Exception as e:
             raise Exception(f'Erro ocorreu na função "load_data_bb_movimentacoes". Detalhe: {e}')
