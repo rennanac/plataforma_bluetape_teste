@@ -253,7 +253,7 @@ try:
                                     """)
                                 )
 
-           ''' change_color = JsCode("""
+            ''' change_color = JsCode("""
                       function(params){
                         if(params.data.RESULTADO == 'ERRO'){
 
