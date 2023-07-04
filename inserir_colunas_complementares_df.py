@@ -3,8 +3,8 @@ import datetime
 
 class InserirColunasComplementaresDF:
 
-    def inserir_colunas_info_sites(self, df_lista_endereco_site: pd.DataFrame, df_lista_pesquisa: pd.DataFrame, df_lista_pesquisa_com_dados_tribunais: pd.DataFrame, servico_solicitado:str) -> pd.DataFrame:
-        lista_possiveis_servicos = ['copia_integral']
+    def inserir_colunas_info_sites(self, df_lista_endereco_site:pd.DataFrame, df_lista_pesquisa:pd.DataFrame, df_lista_pesquisa_com_dados_tribunais:pd.DataFrame, servico_solicitado:str) -> pd.DataFrame:
+        lista_possiveis_servicos = ['copia_integral','protocolo']
         try:
             if len(df_lista_pesquisa) == 0:
                 print('Todos os processos ja possuem dados de acesso.')
@@ -19,7 +19,7 @@ class InserirColunasComplementaresDF:
                     raise Exception(
                         f'O dataframe "lista_endereco_site" não possui todas as colunas obrigatórias. Detalhe: {e1}.')
                 try:
-                    df_lista_endereco_site = df_lista_endereco_site.drop(columns=['sistema_tribunal'])
+                    df_lista_endereco_site.drop(columns=['cliente_servico','sistema_tribunal_instancia'], inplace=True)
                 except:
                     pass
 
@@ -32,6 +32,15 @@ class InserirColunasComplementaresDF:
 
                 if 'n_processo' not in df_lista_pesquisa.columns:
                     raise Exception(f'O dataframe "lista_pesquisa" não possui a coluna "n_processo" que é obrigatória.')
+
+                if 'url_pre_assinada' not in df_lista_pesquisa.columns:
+                    df_lista_pesquisa['url_pre_assinada'] = ''
+
+                if 'dir_arquivo_pasta_s3' not in df_lista_pesquisa.columns:
+                    df_lista_pesquisa['dir_arquivo_pasta_s3'] = ''
+
+                if 'Cliente' not in df_lista_pesquisa.columns:
+                    df_lista_pesquisa['Cliente'] = ''
 
                 if 'cod_tribunal' in df_lista_pesquisa.columns:
                     df_lista_pesquisa['cod_tribunal'] = df_lista_pesquisa['cod_tribunal'].str.split('.', expand=True).reindex(
@@ -125,8 +134,7 @@ class InserirColunasComplementaresDF:
 
 
                 if len(df_lista_pesquisa_com_dados_tribunais) > 0:
-                    #lista_merge = df_lista_pesquisa_pendente.columns.tolist()
-                    lista_merge = ['n_processo','n_processo_original','cod_tribunal','tribunal','sistema','instancia','url','senha','login']
+
                     df_lista_pesquisa = pd.merge(
                         df_lista_pesquisa_com_dados_tribunais.loc[
                             (df_lista_pesquisa_com_dados_tribunais["n_processo"].fillna('').str.replace(' ', '') != ''),
@@ -153,6 +161,7 @@ class InserirColunasComplementaresDF:
 
                 df_lista_pesquisa['nprocesso_sistema_tribunal_instancia'] = df_lista_pesquisa['n_processo'].map(str) + '_' + df_lista_pesquisa['sistema'].map(str) + '_' + df_lista_pesquisa['tribunal'].map(str) + '_' + df_lista_pesquisa['instancia'].map(str)
                 df_lista_pesquisa['datasolicitacao'] = datetime.date.today().strftime('%Y/%m/%d')
+                df_lista_pesquisa.drop_duplicates(subset=['nprocesso_sistema_tribunal_instancia', 'datasolicitacao'], keep=False, inplace=True)
 
                 df_lista_pesquisa.loc[
                     (df_lista_pesquisa['copia_integral'].fillna('').str.replace(' ', '') == 'RETIRADO'),

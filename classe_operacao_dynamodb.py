@@ -94,7 +94,7 @@ class OperacoesDynamoDB(InserirColunasComplementaresDF):
 
         try:
             df = wr.dynamodb.read_partiql_query(
-                query=f"SELECT * FROM {table_name} WHERE datasolicitacao BETWEEN ? and ?",
+                query=f'''SELECT * FROM "{table_name}" WHERE datasolicitacao BETWEEN ? and ?''',
                 parameters=[data_inicio, data_fim],
                 boto3_session=self.session
             )
@@ -168,29 +168,6 @@ class OperacoesDynamoDB(InserirColunasComplementaresDF):
         else:
             return response['Item']
 
-
-    def put_table_lista_processos(self, table_name_lista_processos:str,table_name_endereco_site:str,df_lista_pesquisa:pd.DataFrame):
-
-        df_lista_endereco_site = self.get_table(table_name_endereco_site)
-        data_atual = datetime.date.today().strftime('%Y/%m/%d')
-        df_lista_pesquisa_atual = self.get_table_entre_datas(table_name_lista_processos,data_atual,data_atual)
-
-        df = self.inserir_colunas_info_sites(
-            df_lista_endereco_site=df_lista_endereco_site,
-            df_lista_pesquisa=df_lista_pesquisa,
-            df_lista_pesquisa_com_dados_tribunais=df_lista_pesquisa_atual,
-            servico_solicitado='copia_integral'
-        )
-
-        try:
-            wr.dynamodb.put_df(
-                df,
-                table_name=table_name_lista_processos,
-                boto3_session=self.session
-            )
-        except ClientError as e:
-            raise Exception(f'Erro ocorreu ao fazer insert na tabela. Detalhe: {e}')
-
     def get_table_filter(self,table_name:str,key:str,valor:str):
 
         try:
@@ -218,41 +195,35 @@ class OperacoesDynamoDB(InserirColunasComplementaresDF):
         else:
             return df
 
-    def delete_itens(self, table_name:str,items):
+    def delete_itens(self, table_name:str,itens):
         try:
-            wr.dynamodb.delete_items(items=items, table_name=table_name)
+            wr.dynamodb.delete_items(items=itens, table_name=table_name)
         except ClientError as e:
             raise Exception(f'Erro ocorreu ao deletar itens da tabela. Detalhe: {e}')
 
-#OperacoesDynamoDB().create_table('SOPII_senhas_bb_movimentacoes','status','data_hora')
-#data_atual = datetime.datetime.now().strftime('%Y/%m/%d')
-#OperacoesDynamoDB().put_senha_login_bb_movimentacoes('ATUAL','00:00:00','Primeiro Login','teste','teste1',data_atual)
-#t = OperacoesDynamoDB().get_senha_login_bb_movimentacoes('ATUAL','00:00:00')
-#t = OperacoesDynamoDB().update_senha_login_bb_movimentacoes('ATUAL','00:00:00','Tamara','teste1','teste2',data_atual)
-#print(t)
-#df = OperacoesDynamoDB().get_table_entre_datas('SOPII_bbmovimentacoes',data_atual,data_atual)
+    def delete_itens_usando_sql(self):
+        table_name = 'depara_tipo_protocolo'
+        cliente = 'barcelos-sopiii'
+        wr.dynamodb.execute_statement(
+            statement=f"DELETE FROM \"{table_name}\" WHERE cliente=?",
+            parameters=[cliente],
+            boto3_session=self.session
+        )
 
-'''df = pd.read_excel('./teste.xlsx', dtype=str)
+    '''def detele_items_usando_filtro(self):
+        lista_coluna = ['cliente_servico', 'sistema_tribunal_instancia']
+        coluna_que_nao_pode_esta_vazia = 'cliente_servico'
+        nome_tabela_dynamodb = 'lista_endereco_site'
+        nome_chave = 'cliente_servico'
+        valor_chave = 'rolim_copia-integral'
 
-df.loc[
-    (df['hora_execucao'].fillna('') == '22/05/2023 04:05'),
-    'url_pre_assinada'
-] = 'https://bb-movimentacoes.s3.amazonaws.com/22_05_2023/movimentacoes-22-05-2023-04-00.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYCVNEZB53WXYPMGB%2F20230523%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20230523T021002Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=a8ccd8865f2ee5d6800d5dcb62d1c38f130d60d76ec6cc1ea51c4aec3b53465d'
+        df = OperacoesDynamoDB().get_table_filter(nome_tabela_dynamodb, nome_chave, valor_chave)
+        df = df.loc[
+            (df[coluna_que_nao_pode_esta_vazia].fillna('').str.replace(' ', '') != ''),
+            lista_coluna
+        ]
+        dicionario = df.to_dict('records')
 
-df.loc[
-    (df['hora_execucao'].fillna('') == '22/05/2023 05:06'),
-    'url_pre_assinada'
-] = 'https://bb-movimentacoes.s3.amazonaws.com/22_05_2023/movimentacoes-22-05-2023-05-00.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYCVNEZB53WXYPMGB%2F20230523%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20230523T020843Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=b9bd6444d252248c5273d25e099d34f70901d2a8c6f3c5f494aa0117dc455121'
+        OperacoesDynamoDB().delete_itens(nome_tabela_dynamodb, dicionario)'''
 
-df.loc[
-    (df['hora_execucao'].fillna('') == '22/05/2023 06:04'),
-    'url_pre_assinada'
-] = 'https://bb-movimentacoes.s3.amazonaws.com/22_05_2023/movimentacoes-22-05-2023-06-00.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYCVNEZB53WXYPMGB%2F20230523%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20230523T020738Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=2da18a0c45e393fd9d7ab89e5bec8f95b881b827f603aad126010b4721e152fd'
 
-df.to_excel('./teste.xlsx', index = False)
-
-#df = pd.read_excel('./teste.xlsx', dtype=str)
-
-OperacoesDynamoDB().put_table('SOPII_bbmovimentacoes',df)'''
-
-#OperacoesDynamoDB().put_registro('user_db',{'login':'barcelos_sopii','senha':'barcelos3123','email':'','nome:':'Barcelos SOPII','empresa':'Barcelos','setor':'SOPII'})

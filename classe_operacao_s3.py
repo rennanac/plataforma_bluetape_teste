@@ -20,7 +20,13 @@ class OperacaoS3:
         )
 
         self.s3_client = session.client('s3', region_name='us-east-2')
-        self.s3 = session.resource('s3')
+
+        self.s3 = boto3.client(
+            service_name="s3",
+            region_name="us-east-2",
+            aws_access_key_id=AWS_SERVER_PUBLIC_KEY,
+            aws_secret_access_key=AWS_SERVER_SECRET_KEY,
+        )
 
     def create_bucket(self,bucket_name):
         try:
@@ -36,7 +42,18 @@ class OperacaoS3:
             object_name = file_name
 
         try:
-            response = self.s3_client.upload_file(file_name, bucket, object_name)
+            self.s3_client.upload_file(file_name, bucket, object_name)
+        except ClientError as e:
+            raise Exception(e)
+        else:
+            return True
+
+    def upload_file_obj(self, file_name, bucket, object_name=None):
+        if object_name is None:
+            object_name = file_name
+
+        try:
+            self.s3.upload_fileobj(file_name, bucket, object_name)
         except ClientError as e:
             raise Exception(e)
         else:
@@ -82,6 +99,21 @@ class OperacaoS3:
         else:
             return list_obj
 
+    def list_nome_arquivos_pasta(self,bucket_name, nome_pasta):
+        try:
+            list_name_file = dict()
+            result = self.s3.list_objects_v2(Bucket=bucket_name, Prefix=nome_pasta)
+            for item in result['Contents']:
+                files = item['Key'].split("/")[1]
+                if len(files.replace(' ','')) > 0:
+                    print(files)
+                    list_name_file[files] = item['Key']
+
+        except ClientError as e:
+            raise Exception(e)
+        else:
+            return list_name_file
+
     def download_object(self, bucket_name, object_name, file_name):
         try:
             self.s3_client.download_file(bucket_name, object_name, file_name)
@@ -89,26 +121,3 @@ class OperacaoS3:
             raise Exception(e)
         else:
             return True
-
-#t= OperacaoS3()
-#p = t.list_objects_bucket('bb-movimentacoes')
-#t.create_bucket('bb-movimentacoes')
-#t.upload_object(file_name='./movimentacoes_22_05_2023 04-00.zip',bucket='bb-movimentacoes',object_name='22_05_2023/movimentacoes_22_05_2023 04-00.zip')
-#t.upload_object(file_name='./movimentacoes_22_05_2023 05-00.zip',bucket='bb-movimentacoes',object_name='22_05_2023/movimentacoes_22_05_2023 05-00.zip')
-#t.upload_object(file_name='./movimentacoes_22_05_2023 06-00.zip',bucket='bb-movimentacoes',object_name='22_05_2023/movimentacoes_22_05_2023 06-00.zip')
-#t.upload_object(file_name='./Downloads.zip',bucket='bb-movimentacoes',object_name='Downloads.zip')
-#t.upload_object(file_name='./Downloads.zip',bucket='bb-movimentacoes',object_name='Downloads.zip')
-#t.download_object('bb-movimentacoes','requirements.txt','requirements.txt')
-#print(open('requirements.txt').read())
-#obj = t.s3.Object('bb-movimentacoes', 'Downloads.zip')
-#print(obj)
-
-'''BUCKET = 'bb-movimentacoes'
-OBJECT = '22_05_2023/movimentacoes-22-05-2023-04-00.zip'
-
-url = OperacaoS3().s3_client.generate_presigned_url(
-    'get_object',
-    Params={'Bucket': BUCKET, 'Key': OBJECT},
-    ExpiresIn=604800)
-
-print(url)'''
